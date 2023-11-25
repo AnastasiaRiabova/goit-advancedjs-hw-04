@@ -42,6 +42,7 @@ const handleSearch = async (e) => {
   clearPage();
 
   try {
+    showElement(refs.loadBtn, false);
     const { data } = await getImage(currentQuery, page);
 
     const allCollection = data.totalHits;
