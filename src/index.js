@@ -43,12 +43,10 @@ const handleSearch = async (e) => {
 
   try {
     showElement(refs.loadBtn, false);
-    const { data } = await getImage(currentQuery, page);
+    const { totalHits, hits } = await getImage(currentQuery, page);
 
-    const allCollection = data.totalHits;
-    const collection = data.hits;
 
-    if (allCollection === 0) {
+    if (totalHits === 0) {
       showElement(refs.loadBtn, false);
       showElement(refs.logo, true);
       iziToast.show({
@@ -61,16 +59,27 @@ const handleSearch = async (e) => {
 
     showElement(refs.logo, false);
 
-    refs.gallery.insertAdjacentHTML('afterbegin', createMarkup(collection));
+    refs.gallery.insertAdjacentHTML('afterbegin', createMarkup(hits));
 
     iziToast.show({
       title: 'Hooray!',
-      message: `We found ${allCollection} images.`,
+      message: `We found ${totalHits} images.`,
       position: 'topRight',
     });
+    onImages.refresh();
+
+    if (Math.ceil(totalHits / 40) === page) {
+      showElement(refs.loadBtn, false);
+      iziToast.show({
+        title: 'Ops!',
+        message: 'We\'re sorry, but you\'ve reached the end of search results.',
+        position: 'topRight',
+      });
+      return;
+    }
 
     showElement(refs.loadBtn, true);
-    onImages.refresh();
+
   } catch (err) {
     console.log(err);
     showError();
@@ -85,20 +94,18 @@ const handleLoadMore = async (e) => {
   page += 1;
 
   try {
-    const { data } = await getImage(currentQuery, page);
-    const collection = data.hits;
-    const allCollection = data.totalHits;
+    const { hits, totalHits } = await getImage(currentQuery, page);
 
-    if (!(page < Math.ceil(allCollection / 40))) {
+    if (Math.ceil(totalHits / 40) === page) {
+      showElement(refs.loadBtn, false);
       iziToast.show({
+        title: 'Ops!',
         message: 'We\'re sorry, but you\'ve reached the end of search results.',
         position: 'topRight',
       });
-      showElement(refs.loadBtn, false);
-      return;
     }
 
-    refs.gallery.insertAdjacentHTML('beforeend', createMarkup(collection));
+    refs.gallery.insertAdjacentHTML('beforeend', createMarkup(hits));
     scrollPage();
     onImages.refresh();
   } catch (err) {
